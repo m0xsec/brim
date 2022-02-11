@@ -87,10 +87,13 @@ export class Lake {
 
     // @ts-ignore
     this.lake = spawn(zedCommand(), args, opts)
-    this.lake.on("error", (err) => {
-      // XXX should notify renderers of error
-      log.error("lake spawn error", err)
-    })
+    this.lake
+      .on("error", (err) => {
+        log.error("lake spawn error", err)
+      })
+      .on("exit", (code) => {
+        log.info("lake exited with code: ", code)
+      })
   }
 
   // XXX Eventually we'll have the os choose a dynamic port. For now just
