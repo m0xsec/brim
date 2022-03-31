@@ -24,9 +24,9 @@ const QueryItem: NodeRenderer<any> = ({
 }) => {
   const {id} = data
   const isGroup = "items" in data
-  const ctxMenu = useQueryItemMenu(data, tree, handlers)
-  const dispatch = useDispatch()
   const lakeId = useSelector(Current.getLakeId)
+  const ctxMenu = useQueryItemMenu({data, tree, handlers, lakeId})
+  const dispatch = useDispatch()
   const itemIcon = isGroup ? <FolderIcon /> : <QueryIcon />
 
   const onGroupClick = (e) => {

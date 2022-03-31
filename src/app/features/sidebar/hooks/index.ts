@@ -21,6 +21,8 @@ import Modal from "src/js/state/Modal"
 import * as remote from "@electron/remote"
 import {Query} from "src/js/state/Queries/types"
 import Queries from "src/js/state/Queries"
+import Tabs from "../../../../js/state/Tabs"
+import {lakePoolPath, lakeQueryPath} from "../../../router/utils/paths"
 
 export const useSectionTreeDefaults = () => {
   const {ref, width = 1, height = 1} = useResizeObserver<HTMLDivElement>()
@@ -67,35 +69,35 @@ export const useSearchHistory = () => {
   }, [historyEntries])
 }
 
-export const useQueryItemMenu = (data, tree, handlers) => {
+export const useQueryItemMenu = ({data, tree, handlers, lakeId}) => {
   const dispatch = useDispatch<AppDispatch>()
-  const currentPool = useSelector(Current.getPool)
   const api = useBrimApi()
   const {value, id} = data
   const isGroup = "items" in data
   const selected = Array.from(new Set([...tree.getSelectedIds(), data.id]))
+  console.log("selected is: ", selected)
+  console.log("data is: ", data)
   const hasMultiSelected = selected.length > 1
 
   const isRemoteItem = dispatch(isRemoteLib([id]))
   const isBrimItem = dispatch(isBrimLib([id]))
   const hasBrimItemSelected = dispatch(isBrimLib(selected))
 
-  const runQuery = (value) => {
-    dispatch(SearchBar.clearSearchBar())
-    dispatch(SearchBar.changeSearchBarInput(value))
+  const runQuery = () => {
+    dispatch(Tabs.activateByUrl(lakeQueryPath(id, lakeId)))
     dispatch(submitSearch())
   }
 
   return [
     {
       label: "Run Query",
-      enabled: !hasMultiSelected && !!currentPool,
+      // enabled: !hasMultiSelected,
       visible: !isGroup,
-      click: () => runQuery(value)
+      click: () => runQuery()
     },
     {
       label: "Copy Query",
-      enabled: !hasMultiSelected,
+      // enabled: !hasMultiSelected,
       visible: !isGroup,
       click: () => {
         lib.doc.copyToClipboard(value)
@@ -104,7 +106,7 @@ export const useQueryItemMenu = (data, tree, handlers) => {
     },
     {
       label: "Export Folder as JSON",
-      visible: isGroup && !hasMultiSelected,
+      visible: isGroup,
       click: async () => {
         const {canceled, filePath} = await ipcRenderer.invoke(
           "windows:showSaveDialog",
@@ -132,16 +134,6 @@ export const useQueryItemMenu = (data, tree, handlers) => {
       label: "Rename",
       enabled: !isBrimItem,
       click: () => handlers.edit()
-    },
-    {
-      label: "Edit",
-      enabled: !hasMultiSelected && !isBrimItem,
-      visible: !isGroup,
-      click: () => {
-        const modalArgs = {query: data, isRemote: false}
-        if (isRemoteItem) modalArgs.isRemote = true
-        dispatch(Modal.show("edit-query", modalArgs))
-      }
     },
     {type: "separator"},
     {
